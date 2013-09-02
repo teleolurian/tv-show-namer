@@ -47,10 +47,12 @@ data.show = data.tvdb.get_series_by_id(data.show['id'])
 data.sources = {}
 Dir.glob("*.{mp*,avi,mkv,wmv,mov,tp,ts,m2ts,vob}").each do |filename|
   match = filename.match(/S(?:eason)*\W*(\d+)E(?:p\w*)*\W*(\d+)/i)
+  match ||= filename.match(/\b(\d+)x(\d+)\b/)
   next unless match
   season, episode = match[1..2].map(&:to_i)
   ext = filename.split(?.).last
   ref = data.show.get_episode(season, episode)
+  next unless ref
   data.sources[filename] = {
     :season     => season,
     :episode    => episode,
