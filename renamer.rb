@@ -1,6 +1,6 @@
 #! /usr/bin/env ruby
 %w{rubygems tvdb_party highline/import ostruct}.each {|x| require x}
-API_KEY = '858FE251BB1D3C61'
+API_KEY = 'GET YOUR OWN API KEY PLEASE'
 class String; def /(k); [self,k].join ?/; end; end
 
 data = OpenStruct.new
