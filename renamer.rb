@@ -33,7 +33,7 @@ elsif data.show_matches.length == 1
   end
 else
   data.show = choose do |menu|
-    menu.prompt "Please select one of the following shows:"
+    puts "Please select one of the following shows:"
     data.show_matches.each do |show|
       menu.choice("#{show['SeriesName']} (#{show['FirstAired']})") { show }
     end
