@@ -14,7 +14,7 @@ data.pwd = Dir.pwd
 # Figure out the series name
 data.series_name = data.pwd.split(?/)[1..-1]
 if data.series_name.last =~ /se(ason|ries)/i
-  data.series_name.pop
+  data.found_season = data.series_name.pop.match(/se(?:ason|ries).*(\d+)/i)[1]
 end
 data.series_name = data.series_name.last
 
@@ -48,10 +48,17 @@ data.sources = {}
 Dir.glob("*.{mp*,avi,mkv,wmv,mov,tp,ts,m2ts,vob}").each do |filename|
   match = filename.match(/S(?:eason)*\W*(\d+)E(?:p\w*)*\W*(\d+)/i)
   match ||= filename.match(/\b(\d+)x(\d+)\b/)
+  if data.found_season
+    match ||= filename.match(/ep\w*\s*(\d+)/i)
+    match = match ? [nil, data.found_season, match[1]] : false
+  end
+  match ||= filename.match(/(\d)(\d{2})/)
   next unless match
+
   season, episode = match[1..2].map(&:to_i)
   ext = filename.split(?.).last
   ref = data.show.get_episode(season, episode)
+  p ref
   next unless ref
   data.sources[filename] = {
     :season     => season,
@@ -61,13 +68,15 @@ Dir.glob("*.{mp*,avi,mkv,wmv,mov,tp,ts,m2ts,vob}").each do |filename|
   stext = season.to_s.rjust(2,?0)
   etext = episode.to_s.rjust(2,?0)
 
-  data.sources[filename][:target] = "S#{stext}E#{etext} #{ref.name}.#{ext}"
+  data.sources[filename][:target] = "S#{stext}E#{etext} #{ref.name}.#{ext}".gsub(/[\?\#\!\/\\]+/, '-')
 end
 
 puts $/ + $/
 puts "The following move is proposed"
 data.sources.keys.sort.each do |filename|
-  puts "#{filename.rjust(50)} -> #{data.sources[filename][:target]}"
+  puts filename
+  puts data.sources[filename][:target]
+  puts $/
 end
 
 copy = choose do |menu|
@@ -76,6 +85,20 @@ copy = choose do |menu|
 end
 
 exit unless copy
+
+# get fanart
+
+fan_art = []
+
+data.show.fanart('en').each do |fanart|
+  fm = fanart.path.match(/(\d+)\.jpg/)
+  fan_art << fm[0]
+  Dir.mkdir('.backdrops') unless File.exists?('.backdrops')
+  puts "Downloading fanart #{fm[0]}..."
+  Kernel.system "curl \"#{fanart.url}\" -o .backdrops/#{fm[0]}"
+end
+fan_art = fan_art.map {|x| "<backdrop>./.backdrops/#{x}</backdrop>"}.join('')
+
 
 data.sources.each_pair do |filename, v|
   next if filename == v[:target]
@@ -88,6 +111,8 @@ data.sources.each_pair do |filename, v|
       <overview>#{ref.overview}</overview>
       #{data.show.genres.collect {|x| "<genre>#{x}</genre>"}}
       <director>#{ref.director}</director>
+      #{data.show.actors.collect {|x| "<actor>#{x}</actor>"}}
+      #{fan_art}
     </details>}
   metadata_filename = v[:target].sub(/\.\w+$/, '.xml')
   IO.write(metadata_filename, metadata)

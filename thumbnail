@@ -1,0 +1,9 @@
+#!/opt/bin/env ruby
+require 'shellwords'
+
+
+Dir.glob("*.{mp*,avi,mkv,wmv,mov,tp,ts,m2ts,vob}").each do |file|
+	show = file
+	outname = show.sub(/\.\w+$/, '.png')
+	`ffmpeg -ss 00:06:01 -i #{Shellwords.escape(show)} -vframes 1 -an -s 400x300 -vcodec png #{Shellwords.escape(outname)}`
+end
