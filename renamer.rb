@@ -1,6 +1,6 @@
 #! /usr/bin/env ruby
 %w{rubygems tvdb_party highline/import ostruct}.each {|x| require x}
-API_KEY = 'GET YOUR OWN API KEY PLEASE'
+API_KEY = 'GET-YOUR-OWN-KEY'
 class String; def /(k); [self,k].join ?/; end; end
 
 data = OpenStruct.new
@@ -58,7 +58,6 @@ Dir.glob("*.{mp*,avi,mkv,wmv,mov,tp,ts,m2ts,vob}").each do |filename|
   season, episode = match[1..2].map(&:to_i)
   ext = filename.split(?.).last
   ref = data.show.get_episode(season, episode)
-  p ref
   next unless ref
   data.sources[filename] = {
     :season     => season,
@@ -101,17 +100,16 @@ fan_art = fan_art.map {|x| "<backdrop>./.backdrops/#{x}</backdrop>"}.join('')
 
 
 data.sources.each_pair do |filename, v|
-  next if filename == v[:target]
-  FileUtils.mv filename, v[:target]
+  FileUtils.mv filename, v[:target] rescue true
   ref = v[:ref]
   metadata = %Q{<?xml version="1.0" encoding="utf-8"?>
     <details>
       <year>#{ref.air_date}</year>
       <title>#{ref.name}</title>
       <overview>#{ref.overview}</overview>
-      #{data.show.genres.collect {|x| "<genre>#{x}</genre>"}}
+      #{data.show.genres.collect {|x| "<genre>#{x}</genre>"}.join('')}
       <director>#{ref.director}</director>
-      #{data.show.actors.collect {|x| "<actor>#{x}</actor>"}}
+      #{data.show.actors.collect {|x| "<actor>#{x.name}</actor>"}.join('')}
       #{fan_art}
     </details>}
   metadata_filename = v[:target].sub(/\.\w+$/, '.xml')
